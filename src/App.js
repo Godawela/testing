@@ -3,7 +3,6 @@ import './App.css';
 import DigitButton from './DigitButton';
 import OperationButton from './OperationButton';
 
-
 export const ACTIONS = {
   ADD_DIGIT: 'add-digit',
   CLEAR: 'clear',
@@ -15,11 +14,18 @@ export const ACTIONS = {
 function reducer(state, { type, payload }) {
   switch (type) {
     case ACTIONS.ADD_DIGIT:
-      if (payload.digit === "0" && state.currentOperand === "0") {
-        return state
+      if (state.overwrite) {
+        return {
+          ...state,
+          currentOperand: payload.digit,
+          overwrite: false,
+        };
       }
-      if (payload.digit === "." && state.currentOperand.includes(".")) {
-        return state
+      if (payload.digit === "0" && state.currentOperand === "0") {
+        return state;
+      }
+      if (payload.digit === "." && state.currentOperand?.includes(".")) {
+        return state;
       }
       return {
         ...state,
@@ -43,8 +49,7 @@ function reducer(state, { type, payload }) {
         return {
           ...state,
           operation: payload.operation,
-         
-        }
+        };
       }
 
       if (state.previousOperand == null) {
@@ -53,7 +58,7 @@ function reducer(state, { type, payload }) {
           operation: payload.operation,
           previousOperand: state.currentOperand,
           currentOperand: null,
-        }
+        };
       }
       return {
         ...state,
@@ -63,6 +68,7 @@ function reducer(state, { type, payload }) {
       };
 
     case ACTIONS.DELETE_DIGIT:
+      if (state.currentOperand == null) return state;
       return {
         ...state,
         currentOperand: state.currentOperand.slice(0, -1),
@@ -70,24 +76,26 @@ function reducer(state, { type, payload }) {
 
     case ACTIONS.EVALUATE:
       if (state.operation == null || state.currentOperand == null || state.previousOperand == null) {
-          return state
+        return state;
       }
       return {
         ...state,
+        overwrite: true,
         currentOperand: evaluate(state),
         previousOperand: null,
         operation: null,
-      }
+      };
+
     default:
       return state;
   }
 }
 
-function evaluate({ currentOperand, previousOperand, operation}) {
-  const prev = parseFloat(previousOperand)
-  const current = parseFloat(currentOperand)
-  if (isNaN(prev) || isNaN(current)) return ""
-  let computation = ""
+function evaluate({ currentOperand, previousOperand, operation }) {
+  const prev = parseFloat(previousOperand);
+  const current = parseFloat(currentOperand);
+  if (isNaN(prev) || isNaN(current)) return "";
+  let computation = "";
   switch (operation) {
     case "+":
       computation = prev + current;
@@ -100,18 +108,24 @@ function evaluate({ currentOperand, previousOperand, operation}) {
       break;
     case "/":
       if (current === 0) {
-        return "Error: Division by zero"
+        return "Error: Division by zero";
       }
       computation = prev / current;
       break;
+    default:
+      return "";
   }
 
-  return computation.toString()
-
+  return computation.toString();
 }
 
 function App() {
-  const [{ currentOperand, previousOperand, operation }, dispatch] = useReducer(reducer, {});
+  const [{ currentOperand, previousOperand, operation }, dispatch] = useReducer(reducer, {
+    currentOperand: null,
+    previousOperand: null,
+    operation: null,
+    overwrite: false,
+  });
 
   return (
     <div className="calculator-grid">
