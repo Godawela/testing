@@ -25,7 +25,7 @@ function reducer(state, { type, payload }) {
         ...state,
         currentOperand: `${state.currentOperand || ''}${payload.digit}`,
       };
-      
+
     case ACTIONS.CLEAR:
       return {
         ...state,
@@ -33,21 +33,75 @@ function reducer(state, { type, payload }) {
         previousOperand: '',
         operation: '',
       };
+
     case ACTIONS.CHOOSE_OPERATION:
+      if (state.currentOperand == null && state.previousOperand == null) {
+        return state;
+      }
+
+      if (state.currentOperand == null) {
+        return {
+          ...state,
+          operation: payload.operation,
+         
+        }
+      }
+
+      if (state.previousOperand == null) {
+        return {
+          ...state,
+          operation: payload.operation,
+          previousOperand: state.currentOperand,
+          currentOperand: null,
+        }
+      }
       return {
         ...state,
+        previousOperand: evaluate(state),
         operation: payload.operation,
-        previousOperand: state.currentOperand,
-        currentOperand: '',
+        currentOperand: null,
       };
+
     case ACTIONS.DELETE_DIGIT:
       return {
         ...state,
         currentOperand: state.currentOperand.slice(0, -1),
       };
+
+    case ACTIONS.EVALUATE:
+      if (state.operation == null || state.currentOperand == null || state.previousOperand == null) {
+          
+      }
     default:
       return state;
   }
+}
+
+function evaluate({ currentOperand, previousOperand, operation}) {
+  const prev = parseFloat(previousOperand)
+  const current = parseFloat(currentOperand)
+  if (isNaN(prev) || isNaN(current)) return ""
+  let computation = ""
+  switch (operation) {
+    case "+":
+      computation = prev + current;
+      break;
+    case "-":
+      computation = prev - current;
+      break;
+    case "*":
+      computation = prev * current;
+      break;
+    case "/":
+      if (current === 0) {
+        return "Error: Division by zero"
+      }
+      computation = prev / current;
+      break;
+  }
+
+  return computation.toString()
+
 }
 
 function App() {
